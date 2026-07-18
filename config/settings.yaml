@@ -1,0 +1,23 @@
+sources:
+  tdx_lc:
+    enabled: true
+    url: http://127.0.0.1:17709/
+    timeout: 3
+  eastmoney:
+    enabled: true
+  tencent:
+    enabled: true
+  guosen:
+    enabled: false
+    api_key:
+    url: https://api.guosen.com.cn/
+    timeout: 5
+
+store:
+  backend: duckdb
+  cache_ttl: 3600
+  duckdb_path: ~/.datacore/datacore.db
+  postgresql:
+    dsn:
+  redis:
+    url:

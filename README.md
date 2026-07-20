@@ -172,9 +172,14 @@ python -m pytest tests/ -v   # 724+ 个测试用例
 - [ARCHITECTURE.md](ARCHITECTURE.md) - 架构设计文档
 - [CODE_WIKI.md](CODE_WIKI.md) - 项目说明书（动态文档）
 - [PRODUCTION_PLAN.md](docs/PRODUCTION_PLAN.md) - 生产就绪路线图（v0.5.0 → v1.0.0）
+- [UNIFIED_DATA_HUB_PLAN.md](docs/UNIFIED_DATA_HUB_PLAN.md) - 统一数据中枢升级方案（v1.0 → v2.0）
 - [docs/harness/](docs/harness/) - HARNESS 工程规范文档 (09 份)
 - [CLAUDE.md](CLAUDE.md) - AI 编码行为准则
 
 ## 版本
 
-v1.0.0 (2026-07-19) - 生产就绪版：WebSocket 实时行情 + 告警系统 + 性能基准 + 安全加固 + 全链路降级
+v2.0.0 (2026-07-19) - 统一数据中枢版：BaseTool 接口层 + 指标体系 + 复权/换月引擎 + 周期转换 + FDT 兼容 + Qlib 适配器 + 清洗/校验/采集/运维工具链
+v1.3.0 (2026-07-19) - 扩展能力版：复权/换月引擎 + 周期转换 + 消费者反馈通道 + 清洗/校验/运维工具
+v1.2.0 (2026-07-19) - FDC 吸收版：40+ 技术指标 + 3 个期货新数据源 + 趋势成熟度评估
+v1.1.0 (2026-07-19) - 基础设施+双接口版：AsyncDataProvider 异步接口 + F10 综合报告 + core 共享模块
+v1.0.0 (2026-07-19) - 生产就绪版：WebSocket 实时行情 + 告警系统 + 性能基准 + 安全加固

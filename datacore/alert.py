@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import time
 import logging
-from typing import Any, Callable, Optional
+from typing import Optional
 from dataclasses import dataclass, field
 from enum import Enum
 

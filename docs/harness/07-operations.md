@@ -1,11 +1,57 @@
 # Data-Core Operations
 
-Version: v1.0.0 | Updated: 2026-07-19
+Version: v2.0.0 | Updated: 2026-07-20
 
 ## Version History
 
 | 版本 | 日期 | 变更说明 |
 |:-----|:-----|:---------|
+| **v2.0.0** | **2026-07-20** | **统一数据枢纽完整版：FDT 兼容层 + Qlib/RD-Agent 适配器 + 终验通过** |
+| | | • 新增 FDT 兼容层（datacore/fdc_compat.py），提供 FDC 兼容的函数签名 |
+| | | • FDC 兼容函数签名映射：get_kline/get_quote/get_fundamental/get_indicators 等 |
+| | | • 数据格式适配：DataFrame/Series 输出格式 + 字段名映射 + 错误码兼容 |
+| | | • 渐进式迁移路径 + 双轨运行支持 |
+| | | • 新增 Qlib/RD-Agent 适配器（datacore/qlib_adapter/，3 个文件） |
+| | | • Qlib DataProvider 完整接口：calendars/instruments/features/fundamentals |
+| | | • 表达式引擎支持（Alpha158 等经典因子表达式） |
+| | | • 数据格式双向转换器（Data-Core ↔ Qlib） |
+| | | • 测试总数 1418 个（新增 197 个） |
+| | | • 代码覆盖率 88%（核心模块接近 100%） |
+| | | • ruff 代码审计零错误 |
+| | | • 统一数据枢纽完整交付 |
+| **v1.3.0** | **2026-07-19** | **BaseTool & 数据工具链版：23个Tool + 复权换月 + 周期转换 + 消费者反馈 + 数据清洗 + 数据校验 + 采集骨架 + 运维工具** |
+| | | • 新增 BaseTool 接口层（datacore/tools/，24 个文件，兼容 LangChain 协议） |
+| | | • 23 个 Tool：OHLCV/Quote/Sentiment/Health/ListSymbols/Macro/Fundamental/F10/Indicators/TermStructure/Basis/MarketRegime/News/Adjustment/Period/UnitUnify/DateAlign/DuplicateMerge/OutlierFilter/CrossSourceVerify/MissingDetect/CalMathCompute/ConfigRead |
+| | | • 新增 all_tools 自动发现机制 |
+| | | • 新增复权/换月引擎（datacore/adjustment/）：股票复权 + 期货主力连续合约 + 换月价差调整 |
+| | | • 新增周期转换引擎（datacore/resampler/）：1m→5m→15m→30m→60m→daily→weekly→monthly |
+| | | • 新增消费者反馈通道（datacore/issue.py）：IssueRegistry + report_issue() + 自动降级 |
+| | | • 新增数据清洗模块（datacore/cleaning/）：unit_unify / date_align / duplicate_merge / outlier_filter |
+| | | • 新增数据校验模块（datacore/validation/）：weight_score / cross_source / missing_detect / cal_math |
+| | | • 新增采集模块骨架（datacore/collectors/）：web_crawl / open_source / local_doc / search |
+| | | • 新增运维工具模块（datacore/operations/）：crawl_retry / error_log / config_tools |
+| | | • get_health() 新增 consumer_issues 字段 |
+| | | • 测试总数 1221 个（新增 365 个） |
+| | | • v2.0 之前最大版本 |
+| **v1.2.0** | **2026-07-19** | **FDC 模块吸收版：indicators 技术指标 + 3 个期货新数据源 + 7 源降级链** |
+| | | • 新增 indicators/ 技术指标模块（从 FDC 吸收，5 个文件） |
+| | | • 37+ 基础指标纯 numpy 实现，三层路由体系（TDX → numpy → TA-Lib） |
+| | | • 新增趋势成熟度评估（assess_trend_maturity） |
+| | | • 新增 QMTProvider 迅投资讯源（P2，依赖 xtquant） |
+| | | • 新增 WebFallbackProvider 网页备用源（P5，零依赖） |
+| | | • 新增 TqSdkProvider 兜底源（P6，依赖 tqsdk） |
+| | | • 期货降级链从 4 源扩展为 7 源（TdxLc→EastMoney→QMT→ExchangeApi→ShengYiShe→WebFallback→TqSdk） |
+| | | • 公开 API：compute_indicators, INDICATOR_NAMES, assess_trend_maturity |
+| | | • 代码覆盖率保持 96% |
+| | | • 新增 2 个测试文件，110 个测试用例 |
+| **v1.1.0** | **2026-07-19** | **统一数据枢纽 Phase 1：异步双接口 + F10 综合报告 + core 共享基础设施** |
+| | | • 新增 AsyncDataProvider 异步双接口（api_async.py，基于 run_in_executor 线程池桥接） |
+| | | • 新增 F10 综合报告（api_f10.py + UnifiedDataProvider.get_f10） |
+| | | • 新增 core/ 共享基础设施模块（types.py + data_freshness.py + __init__.py） |
+| | | • 新增 DataType.F10_REPORT 枚举值 |
+| | | • 数据新鲜度评估（DataFreshnessAssessor + FreshnessStatus 三级状态） |
+| | | • 代码覆盖率从 95% 提升到 96% |
+| | | • 新增 1 个测试文件，28 个测试用例 |
 | **v1.0.0** | **2026-07-19** | **生产就绪版：WebSocket + 告警 + 性能基准 + 安全审计** |
 | | | • 新增 WebSocket 实时行情支持（stream.py: StreamQuote + WebSocketManager） |
 | | | • 新增告警引擎（alert.py: AlertEngine + 预置规则 + 3 通知渠道） |
@@ -69,19 +115,79 @@ Version: v1.0.0 | Updated: 2026-07-19
 | - | `openai>=1.0` | LLM 情绪打分（v0.3.0，可选） |
 | - | `beautifulsoup4>=4.12` | HTML 解析 |
 | - | `websockets>=12.0` | WebSocket 客户端（v1.0.0 新增，可选） |
+| - | `TA-Lib>=0.4` | TA-Lib 技术指标库（v1.2.0 新增，可选，indicators 兜底层） |
+| - | `xtquant>=1.0` | 迅投 QMT 行情接口（v1.2.0 新增，可选，QMTProvider） |
+| - | `tqsdk>=3.0` | 天勤 TqSdk（v1.2.0 新增，可选，TqSdkProvider 兜底） |
+| - | `beautifulsoup4>=4.12` | HTML 解析（v1.3.0，采集模块增强） |
+| - | `langchain-core>=0.1` | LangChain Core（v1.3.0 新增，可选，BaseTool 协议兼容） |
+| - | `pyqlib>=0.9` | Qlib 量化投资框架（v2.0.0 新增，可选，Qlib 适配器） |
 
 ## File Structure
 
 ```
-datacore/                    64 个 Python 源文件
+datacore/                    83 个 Python 源文件
 ├── __init__.py              模块初始化
 ├── api.py                   统一入口 API（含 get_health() + 缓存层）
+├── api_async.py             AsyncDataProvider 异步双接口（v1.1.0 新增）
+├── api_f10.py               F10 综合报告（v1.1.0 新增）
+├── fdc_compat.py            FDT 兼容层（v2.0.0 新增）
 ├── config.py                统一配置
 ├── cli.py                   命令行工具（status 显示真实状态）
 ├── breaker.py               熔断器（v0.4.0 新增）
 ├── metrics.py               指标收集（v0.4.0 新增）
 ├── stream.py                WebSocket 实时行情（v1.0.0 新增）
 ├── alert.py                 告警引擎（v1.0.0 新增）
+├── core/                    共享基础设施（v1.1.0 新增）
+│   ├── types.py             KlineBar / QuoteData / FreshnessStatus
+│   ├── data_freshness.py    DataFreshnessAssessor 数据新鲜度评估
+│   └── __init__.py
+├── indicators/              技术指标模块（v1.2.0 新增，FDC 吸收）
+│   ├── core.py              37+ 基础指标纯 numpy 实现
+│   ├── tdx_compat.py        TDX 通达信对齐指标
+│   ├── legacy_numpy.py      旧版兼容实现
+│   ├── trend_maturity.py    趋势成熟度评估
+│   ├── talib_wrapper.py     TA-Lib 封装兜底
+│   └── __init__.py          导出 compute_indicators / INDICATOR_NAMES / assess_trend_maturity
+├── tools/                   BaseTool 接口层（v1.3.0 新增，核心交付）
+│   ├── base.py              DataCoreBaseTool 基类（兼容 LangChain 协议）
+│   ├── ohlcv.py / quote.py / sentiment.py / health.py
+│   ├── list_symbols.py / macro.py / fundamental.py / f10.py
+│   ├── indicators.py / term_structure.py / basis.py / market_regime.py / news.py
+│   ├── adjustment.py / period.py
+│   ├── unit_unify.py / date_align.py / duplicate_merge.py / outlier_filter.py
+│   ├── cross_source_verify.py / missing_detect.py / cal_math_compute.py
+│   ├── config_read.py
+│   └── __init__.py          all_tools 自动发现机制
+├── adjustment/              复权/换月引擎（v1.3.0 新增）
+│   ├── stock_adjustment.py  股票前复权/后复权/不复权
+│   ├── futures_rollover.py  期货主力连续合约
+│   ├── spread_adjustment.py 期货换月价差调整
+│   └── __init__.py
+├── resampler/               周期转换引擎（v1.3.0 新增）
+│   ├── resampler.py         周期转换主入口
+│   ├── ohlcv_aggregator.py  OHLCV 正确聚合
+│   ├── auto_detector.py     auto 模式自动检测
+│   └── __init__.py
+├── issue.py                 消费者反馈通道（v1.3.0 新增）
+├── cleaning/                数据清洗模块（v1.3.0 新增）
+│   ├── unit_unify.py / date_align.py
+│   ├── duplicate_merge.py / outlier_filter.py
+│   └── __init__.py
+├── validation/              数据校验模块（v1.3.0 新增）
+│   ├── weight_score.py / cross_source.py
+│   ├── missing_detect.py / cal_math.py
+│   └── __init__.py
+├── collectors/              采集模块骨架（v1.3.0 新增）
+│   ├── web_crawl.py / open_source.py
+│   ├── local_doc.py / search.py
+│   └── __init__.py
+├── operations/              运维工具模块（v1.3.0 新增）
+│   ├── crawl_retry.py / error_log.py / config_tools.py
+│   └── __init__.py
+├── qlib_adapter/            Qlib/RD-Agent 适配器（v2.0.0 新增）
+│   ├── provider.py          Qlib DataProvider 接口实现
+│   ├── converter.py         数据格式转换器
+│   └── __init__.py
 ├── models/                  数据模型与枚举
 │   ├── enums.py             DataType/MarketType/SourceGrade
 │   ├── payload.py           数据载荷
@@ -99,10 +205,13 @@ datacore/                    64 个 Python 源文件
 │   └── __init__.py
 ├── futures/                 期货数据模块
 │   ├── futures_provider.py  期货统一入口
-│   ├── providers/           多源降级链
+│   ├── providers/           多源降级链（7 源，v1.2.0 扩展）
 │   │   ├── base.py / tdx_lc.py / eastmoney.py
 │   │   ├── exchange_api.py  （v0.5.0 新增）
 │   │   ├── shengyishe.py    （v0.5.0 新增）
+│   │   ├── qmt.py           （v1.2.0 新增，P2）
+│   │   ├── web_fallback.py  （v1.2.0 新增，P5）
+│   │   ├── tqsdk.py         （v1.2.0 新增，P6）
 │   │   └── __init__.py
 │   └── __init__.py
 ├── equity/                  股票数据模块
@@ -132,7 +241,20 @@ datacore/                    64 个 Python 源文件
 │   │   └── __init__.py
 │   └── __init__.py
 
-tests/                       26 个测试文件，724+ 个测试用例
+tests/                       39 个测试文件，1418 个测试用例
+├── test_fdc_compat.py       FDT 兼容层测试（v2.0.0 新增，98 个用例）
+├── test_qlib_adapter.py     Qlib/RD-Agent 适配器测试（v2.0.0 新增，99 个用例）
+├── test_tools.py            BaseTool 接口层测试（v1.3.0 新增，89 个用例）
+├── test_adjustment.py       复权/换月引擎测试（v1.3.0 新增，80 个用例）
+├── test_resampler.py        周期转换引擎测试（v1.3.0 新增，69 个用例）
+├── test_issue.py            消费者反馈通道测试（v1.3.0 新增，34 个用例）
+├── test_cleaning.py         数据清洗模块测试（v1.3.0 新增，31 个用例）
+├── test_validation.py       数据校验模块测试（v1.3.0 新增，27 个用例）
+├── test_collectors.py       采集模块骨架测试（v1.3.0 新增，18 个用例）
+├── test_operations.py       运维工具模块测试（v1.3.0 新增，19 个用例）
+├── test_indicators.py       技术指标模块测试（v1.2.0 新增，90 个用例）
+├── test_futures_new_providers.py  新期货数据源测试（v1.2.0 新增，20 个用例）
+├── test_phase1.py           Phase 1 综合测试（v1.1.0 新增）
 ├── test_alert.py            告警引擎测试（v1.0.0 新增）
 ├── test_stream.py           WebSocket 测试（v1.0.0 新增）
 ├── benchmark_test.py        性能基准测试（v1.0.0 新增）
@@ -162,4 +284,4 @@ docs/                        部署 + 安全 + 工程规范文档
 ├── PRODUCTION_PLAN.md       生产计划
 └── harness/                 9 个工程规范文档
 
-**总计: 64 个源文件 + 26 个测试文件 + 10 个工程/部署/安全文档**
+**总计: 100+ 个源文件 + 39 个测试文件 + 10 个工程/部署/安全文档**

@@ -40,6 +40,9 @@ class DataType(str, Enum):
     CB_TERMS = "cb_terms"
     CB_PURE_BOND = "cb_pure_bond"
 
+    # ── 聚合类型（v1.1） ──
+    F10_REPORT = "f10_report"
+
 
 class MarketType(str, Enum):
     """市场类型。"""

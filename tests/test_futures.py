@@ -1483,15 +1483,21 @@ class TestFuturesDataProvider:
 
     @patch("datacore.futures.futures_provider.TdxLcProvider")
     @patch("datacore.futures.futures_provider.EastMoneyFuturesProvider")
+    @patch("datacore.futures.futures_provider.QMTProvider")
     @patch("datacore.futures.futures_provider.ExchangeApiProvider")
     @patch("datacore.futures.futures_provider.ShengYiSheProvider")
-    def test_init_creates_sources(self, mock_sys, mock_exch, mock_em, mock_tdx):
+    @patch("datacore.futures.futures_provider.WebFallbackProvider")
+    @patch("datacore.futures.futures_provider.TqSdkProvider")
+    def test_init_creates_sources(self, mock_tq, mock_wf, mock_sys, mock_exch, mock_qmt, mock_em, mock_tdx):
         p = FuturesDataProvider()
-        assert len(p.sources) == 4
+        assert len(p.sources) == 7
         mock_tdx.assert_called_once()
         mock_em.assert_called_once()
+        mock_qmt.assert_called_once()
         mock_exch.assert_called_once()
         mock_sys.assert_called_once()
+        mock_wf.assert_called_once()
+        mock_tq.assert_called_once()
 
     # ---- 降级链中的中间路径 coverage ----
 

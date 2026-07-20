@@ -10,11 +10,8 @@ v1.0.0 新增: 支持 QUOTE 实时推送 + OHLCV 增量更新。
     └── 重连机制 (指数退避)
 """
 from __future__ import annotations
-import asyncio
-import json
-import time
 import logging
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)

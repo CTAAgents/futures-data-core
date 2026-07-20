@@ -12,7 +12,8 @@
     quote = dc.get("600519", DataType.QUOTE)
 """
 
-__version__ = "1.0.0"
-__all__ = ["UnifiedDataProvider"]
+__version__ = "2.0.0"
+__all__ = ["UnifiedDataProvider", "AsyncDataProvider"]
 
 from .api import UnifiedDataProvider
+from .api_async import AsyncDataProvider

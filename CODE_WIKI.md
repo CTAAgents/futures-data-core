@@ -47,22 +47,48 @@
 
 ### 数据复权策略
 
-Data-Core 对不同类型的 K 线数据采取不同的复权策略，设计的核心原则是：**数据源提供什么，Data-Core 就返回什么，不做二次加工**。
+Data-Core 对不同类型的 K 线数据采取不同的复权策略，设计的核心原则是：**Data-Core 统一处理，消费端只声明需求**。
 
-| 市场 | 数据源 | 复权参数 | 结果 | 原因 |
-|:-----|:-------|:---------|:-----|:-----|
-| A 股 | Tencent | URL 路径 `fqkline` + 参数 `qfq` | **前复权** | 腾讯 API 默认返回前复权，不提供原始数据选项 |
-| A 股 | EastMoney | `fqt=1` | **前复权** | 东方财富 API 参数 `fqt=1` 为前复权 |
-| ETF/可转债/REITs | 同上 | 同上 | **前复权** | 共用 EquityProvider，走同一通道 |
-| 期货 | TQ-Local | `dividend_type: "none"` | **不复权** | 期货无除权除息概念，只有换月跳空 |
-| 期货 | EastMoney | 默认参数 | **不复权** | 同上 |
+所有复权/换月处理由 Data-Core 的复权引擎完成，消费方通过 `adjustment` 参数指定需求：
 
-**为什么这么设计？** 核心两条原则：
+| 市场 | 可选 adjustment | 说明 |
+|:-----|:----------------|:-----|
+| A 股/ETF/可转债/REITs | `"qfq"`（前复权）、`"hfq"`（后复权）、`"none"`（不复权） | 基于除权除息日历自行计算，脱离对 API 参数依赖 |
+| 期货 | `"continuous"`（主力连续）、`"continuous_qfq"`（主力连续+前复权）、`"none"`（原始合约） | 主力连续合约拼接（成交量/持仓量/固定日换月） |
 
-1. **期货没有除权除息**，只有主力合约换月。期货 K 线的"跳空"来自换月时的价差，不是分红送股。所以期货不需要复权概念，需要的是主力连续合约拼接（目前由消费方自行处理，参考[换月问题](#)）。
-2. **股票/ETF 有除权除息**，数据源 API 直接返回前复权数据。前复权的特点是历史价格不断修正（每次除权，过往收盘价下调），适合趋势分析和信号计算。如果需要"冻结的历史"做回测精确复现，可以使用 `hfq`（后复权）参数请求后复权数据，当前 Data-Core 仅使用 `qfq`/`fqt=1`。
+**v1.0 时期采用的是"数据源提供什么就返回什么"**的被动策略——A 股的复权由 Tencent/EastMoney 的 API 参数完成，期货换月交由消费方自行处理。**v2.0 升级为 Data-Core 统一复权/换月引擎**，消费方不再感知底层计算逻辑。
 
-> **注意**: 同一只股票在除权除息前后，前复权 K 线的历史价格会发生变化。如果想要固定不变的历史价格，需要修改 API 参数请求不复权数据。
+```python
+# ─── v2.0 用法 ───
+dc.get("RB", DataType.OHLCV, adjustment="continuous")       # 期货主力连续
+dc.get("600519", DataType.OHLCV, adjustment="qfq")          # A 股前复权
+dc.get("600519", DataType.OHLCV, adjustment="hfq")          # A 股后复权
+dc.get("600519", DataType.OHLCV, adjustment="none")         # A 股不复权
+```
+
+### 周期转换
+
+Data-Core 支持跨周期 K 线转换。消费端只需指定 `period` 参数，Data-Core 自动从最细粒度原始数据重采样到目标周期。
+
+```python
+dc.get("RB", DataType.OHLCV, period="daily")                 # 日线（默认）
+dc.get("RB", DataType.OHLCV, period="60m")                   # 60 分钟线
+dc.get("RB", DataType.OHLCV, period="15m")                   # 15 分钟线
+dc.get("RB", DataType.OHLCV, period="weekly")                # 周线
+dc.get("RB", DataType.OHLCV, period="monthly")               # 月线
+```
+
+| period 值 | 说明 | 聚合规则 |
+|:----------|:-----|:---------|
+| `"1m"` ~ `"60m"` | 分钟级 | O=first, H=max, L=min, C=last, V=sum |
+| `"daily"` | 日线（默认） | 当日所有分钟聚合 |
+| `"weekly"` | 周线（周一为起始） | 5 根日线→1 根周线 |
+| `"monthly"` | 月线 | 当月日线→1 根月线 |
+| `"auto"` | 自动选择最合适周期 | 按数据量自动判断 |
+
+**处理管线**: `原始数据 → 复权/换月引擎 → 周期转换引擎 → 消费端`
+
+**约束**: 只能从细粒度→粗粒度（1min→5min→daily→weekly）。如果请求的周期比 Provider 能提供的最细粒度还细，返回错误+建议。
 
 ### 版本演进
 

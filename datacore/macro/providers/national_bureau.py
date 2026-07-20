@@ -39,7 +39,7 @@ class NationalBureauProvider(MacroDataSource):
                         "rowcode": "zb",
                         "colcode": "sj",
                         "wds": "[]",
-                        "dfwds": f'[{{"wdcode":"zb","valuecode":"A01010101"}}]',
+                        "dfwds": '[{"wdcode":"zb","valuecode":"A01010101"}]',
                     },
                     headers={
                         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",

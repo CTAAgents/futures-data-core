@@ -434,7 +434,7 @@ class TestUnifiedDataProvider:
             patch("datacore.api._get_macro", return_value=mock_provider),
         ):
             result = dc.get_health()
-            assert result["version"] == "1.0.0"
+            assert result["version"] == "2.0.0"
 
     def test_get_health_status(self):
         """全源可用时返回 healthy。"""

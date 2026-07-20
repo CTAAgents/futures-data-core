@@ -1,16 +1,57 @@
 # Data-Core Gap Analysis
 
-Version: v1.0.0 | Updated: 2026-07-19
+Version: v2.0.0 | Updated: 2026-07-20
 
 ## Overview
 
-所有 Phase 5-7 差距已全部关闭。v1.0.0 生产就绪，代码覆盖率 ≥ 95%，pylint ≥ 9.50/10, mypy/ruff 0 错误，7 项安全审计全部通过。
+所有 Phase 0-12 差距已全部关闭。v2.0.0 统一数据枢纽完整版完成，FDT 兼容层 + Qlib/RD-Agent 适配器全部交付。终验 1418 测试全部通过，88% 覆盖率（核心模块接近 100%），ruff 代码审计零错误。
 
 | 阶段 | 版本 | 状态 | 新增差距 | 关闭差距 |
 |:-----|:-----|:-----|:---------|:---------|
 | Phase 5 | v0.5.0 | ✅ COMPLETED | 2 (G11, G12) | 6 (G03, G07, G08, G09, D01, D03, D05) |
 | Phase 6 | v0.6.0 | ✅ COMPLETED | 0 | 1 (G11) |
 | Phase 7 | v1.0.0 | ✅ COMPLETED | 0 | 1 (G12) |
+| Phase 8 | v1.1.0 | ✅ COMPLETED | 4 (G13, G14, G15, G16) | 4 (G13, G14, G15, G16) |
+| Phase 9 | v1.2.0 | ✅ COMPLETED | 2 (G17, G18) | 2 (G17, G18) |
+| Phase 10 | v1.3.0 | ✅ COMPLETED | 8 (G19-G26) | 8 (G19-G26) |
+| Phase 11 | v2.0.0 | ✅ COMPLETED | 2 (G27-G28) | 2 (G27-G28) |
+| Phase 12 | v2.0.0 | ✅ COMPLETED | 0 | 0 (终验通过) |
+
+## v2.0.0 已关闭差距
+
+| ID | 标题 | 关闭版本 | 说明 |
+|:---|:-----|:---------|:-----|
+| G27 | FDT 兼容层 | v2.0.0 | 新增 fdc_compat.py，提供 FDC 兼容的函数签名，数据格式适配（DataFrame/Series），字段名映射，错误码兼容，98 个测试用例 |
+| G28 | Qlib/RD-Agent 适配器 | v2.0.0 | 新增 qlib_adapter/ 模块，Qlib DataProvider 完整接口实现，表达式引擎支持，数据格式双向转换器，99 个测试用例 |
+
+## v1.3.0 已关闭差距
+
+| ID | 标题 | 关闭版本 | 说明 |
+|:---|:-----|:---------|:-----|
+| G19 | BaseTool 接口层 | v1.3.0 | 新增 DataCoreBaseTool 基类（兼容 LangChain 协议），23 个 Tool，all_tools 自动发现机制 |
+| G20 | 复权/换月引擎 | v1.3.0 | 新增 adjustment/ 模块，股票前复权/后复权/不复权，期货主力连续合约（3种换月方式），换月价差调整（3种方式） |
+| G21 | 周期转换引擎 | v1.3.0 | 新增 resampler/ 模块，1m→5m→15m→30m→60m→daily→weekly→monthly 全周期支持，OHLCV 正确聚合，auto 模式 |
+| G22 | 消费者反馈通道 | v1.3.0 | 新增 issue.py，IssueRegistry + DataIssue + IssueType，report_issue() API，自动降级应对，get_health() 集成 |
+| G23 | 数据清洗模块 | v1.3.0 | 新增 cleaning/ 模块，unit_unify / date_align / duplicate_merge / outlier_filter |
+| G24 | 数据校验模块 | v1.3.0 | 新增 validation/ 模块，weight_score / cross_source / missing_detect / cal_math |
+| G25 | 采集模块骨架 | v1.3.0 | 新增 collectors/ 模块骨架，web_crawl / open_source / local_doc / search |
+| G26 | 运维工具模块 | v1.3.0 | 新增 operations/ 模块，crawl_retry / error_log / config_tools |
+
+## v1.2.0 已关闭差距
+
+| ID | 标题 | 关闭版本 | 说明 |
+|:---|:-----|:---------|:-----|
+| G17 | 技术指标模块 | v1.2.0 | 新增 indicators/ 模块（从 FDC 吸收），37+ 基础指标，三层路由体系（TDX→numpy→TA-Lib），趋势成熟度评估 |
+| G18 | 期货数据源扩展 | v1.2.0 | 新增 3 个期货数据源（QMT/TqSdk/WebFallback），期货降级链从 4 源扩展为 7 源 |
+
+## v1.1.0 已关闭差距
+
+| ID | 标题 | 关闭版本 | 说明 |
+|:---|:-----|:---------|:-----|
+| G13 | 异步数据接口 | v1.1.0 | 新增 AsyncDataProvider（api_async.py），基于 run_in_executor 线程池桥接同步代码，提供异步双接口 |
+| G14 | F10 综合报告 | v1.1.0 | 新增 F10 综合报告（api_f10.py + UnifiedDataProvider.get_f10），聚合期限结构/价差/基差/仓单/持仓排名 |
+| G15 | core 共享基础设施 | v1.1.0 | 新增 datacore/core/ 模块（types.py + data_freshness.py + __init__.py），提供 KlineBar/QuoteData/FreshnessStatus 核心类型 |
+| G16 | 数据新鲜度评估 | v1.1.0 | 新增 DataFreshnessAssessor 数据新鲜度评估器，三级状态（FRESH/STALE/EXPIRED），可观测性完整 |
 
 ## v1.0.0 已关闭差距
 
@@ -76,7 +117,11 @@ Version: v1.0.0 | Updated: 2026-07-19
 | v0.5.0 | 2 (G11, G12) | 7 (G03, G07, G08, G09, D01, D03, D05) | 23 |
 | v0.6.0 | 0 | 1 (G11) | 24 |
 | v1.0.0 | 0 | 1 (G12) | 25 |
+| v1.1.0 | 4 (G13-G16) | 4 (G13-G16) | 29 |
+| v1.2.0 | 2 (G17-G18) | 2 (G17-G18) | 31 |
+| v1.3.0 | 8 (G19-G26) | 8 (G19-G26) | 39 |
+| v2.0.0 | 2 (G27-G28) | 2 (G27-G28) | 41 |
 
 ## 最终状态
 
-v1.0.0 所有已登记差距（G01-G12, D01-D05）全部关闭。项目已达到生产就绪标准。
+v2.0.0 所有已登记差距（G01-G28, D01-D05）全部关闭。项目已达到统一数据枢纽完整标准，FDT 兼容层 + Qlib/RD-Agent 适配器全部交付，1418 测试全部通过，88% 覆盖率（核心模块接近 100%），ruff 代码审计零错误。

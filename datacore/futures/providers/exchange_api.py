@@ -9,12 +9,10 @@ from __future__ import annotations
 from typing import Optional
 import httpx
 from datacore.futures.providers.base import FuturesDataSource
-from datacore.models.ohlcv import KBar, KlineData, QuoteData
+from datacore.models.ohlcv import KlineData, QuoteData
 from datacore.models.enums import DataType
 from datacore.models.futures import (
-    BasisData, PositionRankData, PositionRankItem,
-    WarehouseReceiptData, ContractInfo, ContractChain,
-    TermStructurePoint, TermStructure, SpreadData,
+    PositionRankData, WarehouseReceiptData,
 )
 
 
@@ -29,7 +27,7 @@ EXCHANGE_MAP = {
 class ExchangeApiProvider(FuturesDataSource):
     """交易所官方数据源。"""
     name = "exchange_api"
-    priority = 0
+    priority = 3
     supported_types = {
         DataType.FUTURES_WAREHOUSE_RECEIPT,
         DataType.FUTURES_POSITION,

@@ -9,11 +9,10 @@ from __future__ import annotations
 from typing import Optional
 import httpx
 from datacore.futures.providers.base import FuturesDataSource
-from datacore.models.ohlcv import KBar, KlineData, QuoteData
+from datacore.models.ohlcv import KlineData, QuoteData
 from datacore.models.enums import DataType
 from datacore.models.futures import (
-    BasisData, PositionRankData, PositionRankItem,
-    WarehouseReceiptData,
+    BasisData,
 )
 
 
@@ -43,7 +42,7 @@ SYMBOL_MAP = {
 class ShengYiSheProvider(FuturesDataSource):
     """生意社现货/基差数据源。"""
     name = "shengyishe"
-    priority = 1
+    priority = 4
     supported_types = {
         DataType.FUTURES_BASIS,
     }

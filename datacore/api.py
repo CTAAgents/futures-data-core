@@ -8,6 +8,7 @@ from .models.enums import DataType, MarketType, SourceGrade
 from .models.payload import DataPayload
 from .models.ohlcv import KBar, KlineData
 from .registry.symbol_registry import SymbolRegistry
+from .issue import IssueRegistry, DataIssue
 
 _futures_provider: Any = None
 _equity_provider: Any = None
@@ -117,6 +118,7 @@ class UnifiedDataProvider:
 
     def __init__(self):
         self.registry = SymbolRegistry()
+        self._issues = IssueRegistry()
 
     def get(self, symbol: str, data_type: DataType,
             params: dict | None = None) -> DataPayload:
@@ -417,6 +419,22 @@ class UnifiedDataProvider:
         """Batch fetch data for multiple symbols."""
         return {sym: self.get(sym, data_type, params) for sym in symbols}
 
+    def report_issue(self, issue: DataIssue) -> dict:
+        """上报消费者反馈的数据问题。
+
+        Args:
+            issue: 数据问题实例
+
+        Returns:
+            包含上报结果和自动应对措施的 dict
+        """
+        return self._issues.report(issue)
+
+    def get_f10(self, symbol: str) -> DataPayload:
+        """F10 综合报告。聚合期限结构/价差/基差/仓单/持仓排名等子模块。"""
+        from .api_f10 import get_f10_sync
+        return get_f10_sync(self, symbol)
+
     def list_symbols(self, market: MarketType | None = None) -> list[dict]:
         """List all available symbols."""
         if market:
@@ -453,7 +471,6 @@ class UnifiedDataProvider:
             sources[s.name] = self._probe_source(s)
 
         # ── 缓存层状态（v0.5.0）──
-        mem = _get_cache()
         sources["memory_cache"] = {
             "available": True,
             "latency_ms": 0,
@@ -469,8 +486,9 @@ class UnifiedDataProvider:
         any_ok = any(v.get("available", False) for v in sources.values())
         return {
             "status": "healthy" if any_ok else "unavailable",
-            "version": "1.0.0",
+            "version": "2.0.0",
             "sources": sources,
+            "consumer_issues": self._issues.stats(),
             "timestamp": time.time(),
         }
 

@@ -29,6 +29,16 @@ class TqSdkProvider(FuturesDataSource):
     def check_available(self) -> bool:
         return _TQ_AVAILABLE
 
+    def normalize_symbol(self, symbol: str) -> str:
+        """TqSDK 使用 1 位年份格式: SM609 → 不做转换。"""
+        from datacore.registry.contract_mapper import FuturesContractMapper
+
+        if FuturesContractMapper.is_contract_code(symbol):
+            fmt = FuturesContractMapper.detect_format(symbol)
+            if fmt == 2:  # 2 位年份 → 转 1 位年份
+                return FuturesContractMapper.to_1digit_format(symbol)
+        return symbol
+
     def fetch_kline(self, symbol: str, period: str = "daily", days: int = 120) -> Optional[KlineData]:
         if not _TQ_AVAILABLE:
             return None

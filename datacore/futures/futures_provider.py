@@ -55,7 +55,8 @@ class FuturesDataProvider:
             if DataType.OHLCV not in src.supported_types:
                 continue
             try:
-                kd = src.fetch_kline(symbol, period, days)
+                local_symbol = src.normalize_symbol(symbol)
+                kd = src.fetch_kline(local_symbol, period, days)
                 if kd and kd.bars:
                     grade = SourceGrade.PRIMARY if src.priority == 0 else SourceGrade.DAILY
                     return DataPayload(
@@ -78,7 +79,8 @@ class FuturesDataProvider:
             if not src.check_available() or DataType.QUOTE not in src.supported_types:
                 continue
             try:
-                qd = src.fetch_quote(symbol)
+                local_symbol = src.normalize_symbol(symbol)
+                qd = src.fetch_quote(local_symbol)
                 if qd and qd.last_price:
                     return DataPayload(
                         symbol=symbol, data_type=DataType.QUOTE,
@@ -101,7 +103,8 @@ class FuturesDataProvider:
             if DataType.FUTURES_CONTRACT_CHAIN not in src.supported_types:
                 continue
             try:
-                chain = src.fetch_contract_chain(symbol, num_contracts, period, days)
+                local_symbol = src.normalize_symbol(symbol)
+                chain = src.fetch_contract_chain(local_symbol, num_contracts, period, days)
                 if chain and chain.contracts:
                     grade = SourceGrade.PRIMARY if src.priority == 0 else SourceGrade.DAILY
                     return DataPayload(
@@ -121,7 +124,8 @@ class FuturesDataProvider:
             if DataType.FUTURES_TERM_STRUCTURE not in src.supported_types:
                 continue
             try:
-                ts = src.fetch_term_structure(symbol)
+                local_symbol = src.normalize_symbol(symbol)
+                ts = src.fetch_term_structure(local_symbol)
                 if ts and ts.points:
                     grade = SourceGrade.PRIMARY if src.priority == 0 else SourceGrade.DAILY
                     return DataPayload(
@@ -147,7 +151,8 @@ class FuturesDataProvider:
             if DataType.FUTURES_SPREAD not in src.supported_types:
                 continue
             try:
-                spread = src.fetch_spread(symbol, near, far, period, days)
+                local_symbol = src.normalize_symbol(symbol)
+                spread = src.fetch_spread(local_symbol, near, far, period, days)
                 if spread and spread.spread_series:
                     grade = SourceGrade.PRIMARY if src.priority == 0 else SourceGrade.DAILY
                     return DataPayload(
@@ -167,7 +172,8 @@ class FuturesDataProvider:
             if DataType.FUTURES_BASIS not in src.supported_types:
                 continue
             try:
-                basis = src.fetch_basis(symbol)
+                local_symbol = src.normalize_symbol(symbol)
+                basis = src.fetch_basis(local_symbol)
                 if basis and basis.spot_price > 0:
                     grade = SourceGrade.DAILY
                     return DataPayload(
@@ -187,7 +193,8 @@ class FuturesDataProvider:
             if DataType.FUTURES_POSITION not in src.supported_types:
                 continue
             try:
-                pos = src.fetch_position_rank(symbol)
+                local_symbol = src.normalize_symbol(symbol)
+                pos = src.fetch_position_rank(local_symbol)
                 if pos and pos.long_ranks:
                     grade = SourceGrade.PRIMARY
                     return DataPayload(
@@ -207,7 +214,8 @@ class FuturesDataProvider:
             if DataType.FUTURES_WAREHOUSE_RECEIPT not in src.supported_types:
                 continue
             try:
-                wr = src.fetch_warehouse_receipts(symbol)
+                local_symbol = src.normalize_symbol(symbol)
+                wr = src.fetch_warehouse_receipts(local_symbol)
                 if wr and wr.total_receipts > 0:
                     grade = SourceGrade.PRIMARY
                     return DataPayload(

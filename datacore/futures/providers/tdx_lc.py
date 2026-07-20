@@ -60,8 +60,36 @@ class TdxLcProvider(FuturesDataSource):
                 self._contract_cache[alpha] = code
 
     def _resolve_contract(self, symbol: str) -> Optional[str]:
+        """解析合约代码。
+
+        若 ``symbol`` 已是具体合约代码（如 ``SM2609``），直接返回（尝试从缓存中补全后缀）；
+        若 ``symbol`` 是品种代码（如 ``SM``），从缓存中查找默认合约。
+        """
+        from datacore.registry.contract_mapper import FuturesContractMapper
+
         self._load_contracts()
-        return (self._contract_cache or {}).get(symbol.upper())
+        cache = self._contract_cache or {}
+
+        if FuturesContractMapper.is_contract_code(symbol):
+            sym_upper = symbol.upper()
+            # 尝试在缓存中找到完整的合约代码（带市场后缀如 .XZSE）
+            for alpha, code in cache.items():
+                if code.split(".")[0].upper() == sym_upper:
+                    return code
+            # 未找到后缀，直接返回大写
+            return sym_upper
+
+        return cache.get(symbol.upper())
+
+    def normalize_symbol(self, symbol: str) -> str:
+        """TDX 使用 2 位年份格式: SM2609 → 不做转换。"""
+        from datacore.registry.contract_mapper import FuturesContractMapper
+
+        if FuturesContractMapper.is_contract_code(symbol):
+            fmt = FuturesContractMapper.detect_format(symbol)
+            if fmt == 1:  # 1 位年份 → 转 2 位年份
+                return FuturesContractMapper.to_2digit_format(symbol)
+        return symbol
 
     def check_available(self) -> bool:
         resp = self._post("get_stock_list", {"market": FUTURES_MARKET, "list_type": 1})

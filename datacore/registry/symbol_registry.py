@@ -106,17 +106,34 @@ class SymbolRegistry:
     def resolve(self, symbol: str) -> Optional[SymbolEntry]:
         """解析符号，返回条目或 None。
 
-        先查显式注册表（期货品种）；未命中则按 A 股代码规则自动识别。
+        先查显式注册表（期货品种）；检查是否为期货合约代码（如 ``SM2609``）；
+        未命中则按 A 股代码规则自动识别。
         """
         s = symbol.upper().strip()
         entry = self._entries.get(s)
         if entry is not None:
             return entry
+
+        # 检查是否为期货合约代码（如 "SM2609"、"SM609"），提取品种前缀后查注册表
+        variety = self._extract_futures_variety(s)
+        if variety and variety in self._entries:
+            return self._entries[variety]
+
         # A 股/ETF/CB 自动识别
         market = self._guess_equity_market(s)
         if market is not None:
             return SymbolEntry(symbol=s, name=s, market=market)
         return None
+
+    @staticmethod
+    def _extract_futures_variety(symbol: str) -> Optional[str]:
+        """从合约代码（如 ``SM2609``、``I2609``）中提取品种前缀。
+
+        仅当符号匹配 ``1-2 字母 + 3-4 数字`` 模式时返回字母部分。
+        """
+        import re
+        match = re.match(r"^([A-Za-z]{1,2})\d{3,4}$", symbol.strip())
+        return match.group(1).upper() if match else None
 
     def resolve_market(self, symbol: str) -> Optional[MarketType]:
         """解析符号所属市场。"""

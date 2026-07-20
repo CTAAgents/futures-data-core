@@ -15,6 +15,18 @@ class FuturesDataSource(ABC):
     priority: int = 99
     supported_types: set[DataType] = set()
 
+    def normalize_symbol(self, symbol: str) -> str:
+        """将统一符号转换为本 Provider 的本地格式。
+
+        不同数据源对同一期货合约可能使用不同代码格式
+        （如 TDX 用 2 位年份、TqSDK 用 1 位年份）。
+        各 Provider 可覆盖此方法以声明本地格式，由
+        FuturesDataProvider 在路由时自动调用。
+
+        默认实现：原样返回（不做转换）。
+        """
+        return symbol
+
     @abstractmethod
     def fetch_kline(self, symbol: str, period: str = "daily", days: int = 120) -> Optional[KlineData]:
         """获取 K 线数据。"""

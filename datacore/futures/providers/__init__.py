@@ -4,10 +4,11 @@ from .tdx_lc import TdxLcProvider
 from .eastmoney import EastMoneyFuturesProvider
 from .qmt import QMTProvider
 from .exchange_api import ExchangeApiProvider
+from .sina import SinaProvider
 from .shengyishe import ShengYiSheProvider
 from .web_fallback import WebFallbackProvider
 from .tqsdk import TqSdkProvider
 
 __all__ = ["FuturesDataSource", "TdxLcProvider", "EastMoneyFuturesProvider",
-           "QMTProvider", "ExchangeApiProvider", "ShengYiSheProvider",
+           "QMTProvider", "ExchangeApiProvider", "SinaProvider", "ShengYiSheProvider",
            "WebFallbackProvider", "TqSdkProvider"]

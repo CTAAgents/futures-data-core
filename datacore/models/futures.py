@@ -85,6 +85,7 @@ class BasisData:
     futures_price: float = 0.0
     basis: float = 0.0
     basis_rate: float = 0.0
+    basis_pct: float = 0.0
     spot_source: str = ""
     futures_source: str = ""
 
@@ -117,4 +118,5 @@ class WarehouseReceiptData:
     date: str
     total_receipts: float = 0.0
     change: float = 0.0
+    inventory_pct: float = 0.0
     warehouse_detail: list[dict] = field(default_factory=list)

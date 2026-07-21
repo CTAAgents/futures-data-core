@@ -104,6 +104,7 @@ class EastMoneyFuturesProvider(FuturesDataSource):
                 futures_price=futures_price,
                 basis=basis,
                 basis_rate=basis_rate,
+                basis_pct=basis_rate * 100,
                 spot_source="eastmoney_estimate",
                 futures_source="eastmoney",
             )
@@ -163,8 +164,15 @@ class EastMoneyFuturesProvider(FuturesDataSource):
             volume_ranks=vol_ranks[:20],
         )
 
-    def fetch_warehouse_receipts(self, symbol: str) -> Optional[WarehouseReceiptData]:
-        """从东方财富获取仓单数据。"""
+    def fetch_warehouse_receipts(
+        self, symbol: str, history_days: int = 252,
+    ) -> Optional[WarehouseReceiptData]:
+        """从东方财富获取仓单数据，并计算库存分位数 inventory_pct。
+
+        Args:
+            symbol: 品种代码，如 'RB'
+            history_days: 用于计算分位数的历史仓单天数，默认 252 个交易日
+        """
         try:
             with httpx.Client(timeout=10) as c:
                 resp = c.get(
@@ -172,7 +180,7 @@ class EastMoneyFuturesProvider(FuturesDataSource):
                     params={
                         "sortColumns": "REPORT_DATE",
                         "sortTypes": "-1",
-                        "pageSize": "1",
+                        "pageSize": str(history_days),
                         "pageNumber": "1",
                         "reportName": "RPT_FUTURES_WAREHOUSE_RECEIPT",
                         "columns": "ALL",
@@ -185,6 +193,16 @@ class EastMoneyFuturesProvider(FuturesDataSource):
             return None
         if not data:
             return None
+        try:
+            totals = [
+                float(item.get("TOTAL_RECEIPT", 0) or 0)
+                for item in data
+                if float(item.get("TOTAL_RECEIPT", 0) or 0) > 0
+            ]
+        except (TypeError, ValueError):
+            return None
+        if not totals:
+            return None
         item = data[0]
         try:
             total = float(item.get("TOTAL_RECEIPT", 0) or 0)
@@ -194,13 +212,35 @@ class EastMoneyFuturesProvider(FuturesDataSource):
             return None
         if total <= 0:
             return None
+        inventory_pct = self._calc_inventory_pct(total, totals)
         return WarehouseReceiptData(
             symbol=symbol,
             date=date,
             total_receipts=total,
             change=change,
+            inventory_pct=inventory_pct,
             warehouse_detail=[],
         )
+
+    @staticmethod
+    def _calc_inventory_pct(current: float, history: list[float]) -> float:
+        """计算当前库存值在历史序列中的百分位（0-100）。"""
+        if not history or len(history) < 2:
+            return 0.0
+        valid = [float(v) for v in history if v > 0]
+        if not valid:
+            return 0.0
+        sorted_vals = sorted(valid)
+        n = len(sorted_vals)
+        # 找到 current 在排序序列中的位置（包含等于的情况）
+        idx = 0
+        for i, v in enumerate(sorted_vals):
+            if current <= v:
+                idx = i
+                break
+        else:
+            idx = n
+        return (idx / n) * 100
 
     def check_available(self) -> bool:
         try:

@@ -71,6 +71,7 @@ class ExchangeApiProvider(FuturesDataSource):
                 date="",
                 total_receipts=0,
                 change=0,
+                inventory_pct=0.0,
                 warehouse_detail=[],
             )
         except Exception:

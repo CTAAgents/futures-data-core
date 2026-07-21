@@ -6,7 +6,7 @@ from datacore.models.enums import DataType, MarketType, SourceGrade
 from datacore.models.payload import DataPayload
 from datacore.futures.providers import (
     TdxLcProvider, EastMoneyFuturesProvider, QMTProvider,
-    ExchangeApiProvider, ShengYiSheProvider, WebFallbackProvider, TqSdkProvider,
+    ExchangeApiProvider, SinaProvider, ShengYiSheProvider, WebFallbackProvider, TqSdkProvider,
 )
 
 
@@ -19,6 +19,7 @@ class FuturesDataProvider:
             EastMoneyFuturesProvider(),
             QMTProvider(),
             ExchangeApiProvider(),
+            SinaProvider(),
             ShengYiSheProvider(),
             WebFallbackProvider(),
             TqSdkProvider(),
@@ -45,10 +46,12 @@ class FuturesDataProvider:
         if data_type == DataType.FUTURES_POSITION:
             return self._get_position_rank(symbol)
         if data_type == DataType.FUTURES_WAREHOUSE_RECEIPT:
-            return self._get_warehouse_receipts(symbol)
+            return self._get_warehouse_receipts(symbol, params)
         return None
 
     def _get_kline(self, symbol: str, period: str, days: int) -> Optional[DataPayload]:
+        primary_kd = None
+        primary_src = None
         for src in self.sources:
             if not src.check_available():
                 continue
@@ -58,21 +61,68 @@ class FuturesDataProvider:
                 local_symbol = src.normalize_symbol(symbol)
                 kd = src.fetch_kline(local_symbol, period, days)
                 if kd and kd.bars:
-                    grade = SourceGrade.PRIMARY if src.priority == 0 else SourceGrade.DAILY
-                    return DataPayload(
-                        symbol=symbol, data_type=DataType.OHLCV,
-                        market=MarketType.FUTURES,
-                        data=kd, source=src.name, grade=grade,
-                        collected_at=time.time(),
-                    )
+                    primary_kd = kd
+                    primary_src = src
+                    break
             except Exception:
                 continue
+
+        if primary_kd is None or primary_src is None:
+            return DataPayload(
+                symbol=symbol, data_type=DataType.OHLCV,
+                market=MarketType.FUTURES,
+                grade=SourceGrade.UNAVAILABLE,
+                errors=["所有期货源不可用"], collected_at=time.time(),
+            )
+
+        # 多源拼凑：主数据源缺少 open_interest 时，从其他源补齐
+        self._merge_open_interest(symbol, period, days, primary_kd, primary_src)
+
+        grade = SourceGrade.PRIMARY if primary_src.priority == 0 else SourceGrade.DAILY
         return DataPayload(
             symbol=symbol, data_type=DataType.OHLCV,
             market=MarketType.FUTURES,
-            grade=SourceGrade.UNAVAILABLE,
-            errors=["所有期货源不可用"], collected_at=time.time(),
+            data=primary_kd, source=primary_src.name, grade=grade,
+            collected_at=time.time(),
         )
+
+    def _merge_open_interest(
+        self, symbol: str, period: str, days: int,
+        primary_kd: Any, used_src: Any,
+    ) -> None:
+        """当主数据源 K 线缺少持仓量时，从其他源按日期合并 open_interest。"""
+        if not primary_kd.bars:
+            return
+        if not all(bar.open_interest == 0 for bar in primary_kd.bars):
+            return
+
+        for src in self.sources:
+            if src is used_src:
+                continue
+            if not src.check_available():
+                continue
+            if DataType.OHLCV not in src.supported_types:
+                continue
+            try:
+                local_symbol = src.normalize_symbol(symbol)
+                kd = src.fetch_kline(local_symbol, period, days)
+                if not kd or not kd.bars:
+                    continue
+                if not any(bar.open_interest != 0 for bar in kd.bars):
+                    continue
+                oi_map = {
+                    bar.date: bar.open_interest
+                    for bar in kd.bars if bar.open_interest != 0
+                }
+                filled = 0
+                for bar in primary_kd.bars:
+                    if bar.date in oi_map:
+                        bar.open_interest = oi_map[bar.date]
+                        filled += 1
+                if filled:
+                    break
+            except Exception:
+                continue
 
     def _get_quote(self, symbol: str) -> Optional[DataPayload]:
         for src in self.sources:
@@ -175,6 +225,16 @@ class FuturesDataProvider:
                 local_symbol = src.normalize_symbol(symbol)
                 basis = src.fetch_basis(local_symbol)
                 if basis and basis.spot_price > 0:
+                    # 多源拼凑：现货源缺少期货价格时，从行情源补齐
+                    if basis.futures_price <= 0:
+                        self._fill_basis_futures_price(symbol, basis)
+                    if basis.futures_price > 0:
+                        basis.basis = basis.spot_price - basis.futures_price
+                        basis.basis_rate = (
+                            basis.basis / basis.futures_price
+                            if basis.futures_price > 0 else 0.0
+                        )
+                        basis.basis_pct = basis.basis_rate * 100
                     grade = SourceGrade.DAILY
                     return DataPayload(
                         symbol=symbol, data_type=DataType.FUTURES_BASIS,
@@ -185,6 +245,15 @@ class FuturesDataProvider:
             except Exception:
                 continue
         return None
+
+    def _fill_basis_futures_price(self, symbol: str, basis: Any) -> None:
+        """当基差数据缺少期货价格时，从行情源获取最新期货价格。"""
+        quote_payload = self._get_quote(symbol)
+        if quote_payload and quote_payload.data:
+            last_price = getattr(quote_payload.data, "last_price", None)
+            if last_price and last_price > 0:
+                basis.futures_price = float(last_price)
+                basis.futures_source = quote_payload.source or "quote"
 
     def _get_position_rank(self, symbol: str) -> Optional[DataPayload]:
         for src in self.sources:
@@ -207,7 +276,11 @@ class FuturesDataProvider:
                 continue
         return None
 
-    def _get_warehouse_receipts(self, symbol: str) -> Optional[DataPayload]:
+    def _get_warehouse_receipts(
+        self, symbol: str, params: dict | None = None,
+    ) -> Optional[DataPayload]:
+        params = params or {}
+        history_days = int(params.get("history_days", 252))
         for src in self.sources:
             if not src.check_available():
                 continue
@@ -215,7 +288,7 @@ class FuturesDataProvider:
                 continue
             try:
                 local_symbol = src.normalize_symbol(symbol)
-                wr = src.fetch_warehouse_receipts(local_symbol)
+                wr = src.fetch_warehouse_receipts(local_symbol, history_days=history_days)
                 if wr and wr.total_receipts > 0:
                     grade = SourceGrade.PRIMARY
                     return DataPayload(

@@ -85,6 +85,7 @@ class ShengYiSheProvider(FuturesDataSource):
                 futures_price=0.0,
                 basis=0.0,
                 basis_rate=0.0,
+                basis_pct=0.0,
                 spot_source="shengyishe",
                 futures_source="",
             )

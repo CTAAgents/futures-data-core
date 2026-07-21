@@ -584,24 +584,27 @@ class TestNewsDataProvider:
     # ── _init_sources ──
 
     def test_init_sources_loads_all_providers(self):
-        """_init_sources 加载所有 3 个数据源。"""
-        with patch("datacore.news.providers.cls.ClsProvider"), \
+        """_init_sources 加载所有 4 个数据源。"""
+        with patch("datacore.news.providers.jin10.Jin10Provider"), \
+             patch("datacore.news.providers.cls.ClsProvider"), \
              patch("datacore.news.providers.wallstreet_cn.WallStreetCnProvider"), \
+             patch("datacore.news.providers.eastmoney_research.EastMoneyResearchProvider"):
+            provider = NewsDataProvider()
+        assert len(provider.sources) == 4
+
+    def test_init_sources_handles_partial_failure(self):
+        """部分数据源构造失败时不影响其余。"""
+        with patch("datacore.news.providers.jin10.Jin10Provider"), \
+             patch("datacore.news.providers.cls.ClsProvider"), \
+             patch("datacore.news.providers.wallstreet_cn.WallStreetCnProvider", side_effect=Exception("fail")), \
              patch("datacore.news.providers.eastmoney_research.EastMoneyResearchProvider"):
             provider = NewsDataProvider()
         assert len(provider.sources) == 3
 
-    def test_init_sources_handles_partial_failure(self):
-        """部分数据源构造失败时不影响其余。"""
-        with patch("datacore.news.providers.cls.ClsProvider"), \
-             patch("datacore.news.providers.wallstreet_cn.WallStreetCnProvider", side_effect=Exception("fail")), \
-             patch("datacore.news.providers.eastmoney_research.EastMoneyResearchProvider"):
-            provider = NewsDataProvider()
-        assert len(provider.sources) == 2
-
     def test_init_sources_handles_all_failure(self):
         """所有数据源构造失败时 sources 为空。"""
-        with patch("datacore.news.providers.cls.ClsProvider", side_effect=Exception("fail")), \
+        with patch("datacore.news.providers.jin10.Jin10Provider", side_effect=Exception("fail")), \
+             patch("datacore.news.providers.cls.ClsProvider", side_effect=Exception("fail")), \
              patch("datacore.news.providers.wallstreet_cn.WallStreetCnProvider", side_effect=Exception("fail")), \
              patch("datacore.news.providers.eastmoney_research.EastMoneyResearchProvider", side_effect=Exception("fail")):
             provider = NewsDataProvider()

@@ -29,6 +29,11 @@ class NewsDataProvider:
     def _init_sources(self):
         """懒加载数据源。"""
         try:
+            from datacore.news.providers.jin10 import Jin10Provider
+            self.sources.append(Jin10Provider())
+        except Exception:
+            pass
+        try:
             from datacore.news.providers.cls import ClsProvider
             self.sources.append(ClsProvider())
         except Exception:
